@@ -1,4 +1,4 @@
-﻿#define CREF
+#define CREF
 
 #region copyright
 /*
@@ -99,7 +99,7 @@ namespace MapViewer
 
         private void btn_BrowseElfFile_Click(object sender, EventArgs e)
         {
-            OFD.Filter = "ELF files|*.elf";
+            OFD.Filter = "ELF files|*.elf|All files|*.*";
             if (OFD.ShowDialog() == DialogResult.OK)
             {
                 txtBx_ElfFilepath.Text = OFD.FileName;
@@ -399,14 +399,14 @@ namespace MapViewer
             if (txtBx_ElfFilepath.Text == "" || !File.Exists(txtBx_ElfFilepath.Text))
             {
                 MessageBox.Show("Please enter a valid ELF file path for symbol analysis!", "Gratutious Advice", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                //hide_sym_column();
-                //return;
+                hide_sym_column();
+                return;
             }
             if (BINUTIL_READ_ELF == "" || !File.Exists(BINUTIL_READ_ELF) ||
                 BINUTIL_NM == "" || !File.Exists(BINUTIL_NM))
             {
                 MessageBox.Show("Please enter a valid ObjectDump and NM path for symbol analysis!\n Click the Settings button!", "Gratutious Advice", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                //return;
+                return;
             }
 
             // Parse the dwarf information to get all the compilation units
@@ -551,7 +551,7 @@ namespace MapViewer
             this.BeginInvoke(new MethodInvoker(() =>
             {
                 // Hide Symbol view if there's no elf file
-                tlp_Main.ColumnStyles[1].Width = 0;
+                this.leftLayoutPanel.ColumnStyles[1].Width = 0;
             }));
         }
 
@@ -616,7 +616,14 @@ namespace MapViewer
 
             // Special aspect getter for address coz we want to see that in hex
             this.symAddrColumn.AspectGetter = (x) => { return ((Symbol)x).LoadAddress.ToString("X6"); };
-            colSection.AspectGetter = x => { return ((Symbol)x).SectionName[1].ToString().ToUpper(); };
+            colSection.AspectGetter = x => { 
+                // check what kind of section we have
+                if (((Symbol)x).SectionName.ToLower() == "unknown") {
+                    return "UNK";
+                }
+
+                return ((Symbol)x).SectionName[1].ToString().ToUpper();
+            };
             columnGlobal.AspectGetter = x =>
             {
                 int type = ((Symbol)x).GlobalScope;
